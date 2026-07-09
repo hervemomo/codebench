@@ -9,7 +9,7 @@ from __future__ import annotations
 import factory
 from factory.alchemy import SQLAlchemyModelFactory
 
-from app.models import CodeAssignment, CodingRun, CodingRunKind, Dataset, ExportArtifact, Organization, Project, Question, Response, User, UserRole
+from app.models import CodeAssignment, CodingRun, CodingRunKind, CodingRunStatus, Dataset, ExportArtifact, Organization, Project, Question, Response, User, UserRole
 
 
 class BaseFactory(SQLAlchemyModelFactory):
@@ -95,7 +95,7 @@ class CodingRunFactory(BaseFactory):
     question_id = factory.LazyAttribute(lambda o: o.question.id)
     parent_run_id = None
     kind = CodingRunKind.S2
-    status = "draft"
+    status = CodingRunStatus.DRAFT
     config_json = factory.LazyFunction(dict)
     codebook_json = factory.LazyFunction(dict)
     token_usage = factory.LazyFunction(dict)

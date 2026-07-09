@@ -1,9 +1,4 @@
-"""Python enums backing SQLAlchemy Enum columns.
-
-`CodingRun.status` is deliberately a plain string (not a DB enum) here —
-Sequence 4 introduces the DRAFT/REVIEWED/APPLIED run-status enum via its own
-migration, so we don't lock that shape in early.
-"""
+"""Python enums backing SQLAlchemy Enum columns."""
 
 from __future__ import annotations
 
@@ -20,3 +15,12 @@ class CodingRunKind(str, enum.Enum):
     S3 = "s3"
     SPLIT = "split"
     MERGE = "merge"
+
+
+class CodingRunStatus(str, enum.Enum):
+    """Human-in-the-loop review gate: DRAFT (codes proposed, awaiting review)
+    -> REVIEWED (finalized, ready to apply) -> APPLIED (coding job has run)."""
+
+    DRAFT = "draft"
+    REVIEWED = "reviewed"
+    APPLIED = "applied"

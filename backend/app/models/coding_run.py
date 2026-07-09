@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
-from app.models.enums import CodingRunKind
+from app.models.enums import CodingRunKind, CodingRunStatus
 from app.models.mixins import TenantMixin
 
 
@@ -23,9 +23,9 @@ class CodingRun(TenantMixin, Base):
     )
 
     kind: Mapped[CodingRunKind] = mapped_column(SAEnum(CodingRunKind, name="coding_run_kind", native_enum=True), nullable=False)
-    # Plain string, not a DB enum: Sequence 4 adds the DRAFT/REVIEWED/APPLIED
-    # enum via its own migration; keeping this a string avoids a schema clash.
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
+    status: Mapped[CodingRunStatus] = mapped_column(
+        SAEnum(CodingRunStatus, name="coding_run_status", native_enum=True), nullable=False, default=CodingRunStatus.DRAFT
+    )
 
     config_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     codebook_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)

@@ -4,7 +4,7 @@ from app.db.base import Base
 from app.models.code_assignment import CodeAssignment
 from app.models.coding_run import CodingRun
 from app.models.dataset import Dataset
-from app.models.enums import CodingRunKind, UserRole
+from app.models.enums import CodingRunKind, CodingRunStatus, UserRole
 from app.models.export_artifact import ExportArtifact
 from app.models.organization import Organization
 from app.models.project import Project
@@ -23,6 +23,7 @@ __all__ = [
     "Response",
     "CodingRun",
     "CodingRunKind",
+    "CodingRunStatus",
     "CodeAssignment",
     "ExportArtifact",
 ]
