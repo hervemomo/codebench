@@ -70,12 +70,12 @@ def _representative_samples(texts, labels, probabilities, n_samples: int) -> dic
         if cid == -1:
             continue
         if probabilities is not None:
-            members = [(t, p) for t, l, p in zip(texts, labels, probabilities) if l == cid]
+            members = [(t, p) for t, lab, p in zip(texts, labels, probabilities) if lab == cid]
             members.sort(key=lambda tp: tp[1], reverse=True)
             take = min(n_samples, len(members))
             reps[cid] = [t for t, _ in members[:take]]
         else:
-            ct = [t for t, l in zip(texts, labels) if l == cid]
+            ct = [t for t, lab in zip(texts, labels) if lab == cid]
             idx = np.linspace(0, len(ct) - 1, min(n_samples, len(ct)), dtype=int)
             reps[cid] = [ct[i] for i in idx]
     return reps
