@@ -1,18 +1,24 @@
 # Handoff
 
+**Last updated:** 2026-07-08 (session end)
 **Sequence in progress:** 0 — Repository Scaffold & Isolated Environment
-**Branch:** `seq/0-scaffold` (cut from `develop`)
+**Branch:** `seq/0-scaffold` (cut from `develop`, pushed to origin, 1 commit ahead of `develop`)
 
-## Last done
-- Monorepo layout created: `backend/`, `frontend/`, `docker/`, `.github/workflows/`, `scripts/`, `Makefile`.
-- `docker/backend.Dockerfile`, `docker/frontend.Dockerfile`, `docker-compose.yml` (`api`, `worker`, `db`=postgres:16, `redis`=redis:7, `web`) — `minio` is deferred to Sequence 2 per the Playbook.
-- `backend/app/main.py` with `GET /healthz` → `{"status":"ok","version":...}`; `backend/app/config.py` (pydantic-settings; missing `OPENAI_API_KEY` only raises when an LLM call is attempted, not at import).
-- Tests: `backend/tests/test_healthz.py`, `backend/tests/test_env.py`.
-- `backend/requirements.lock` and `frontend/package-lock.json` generated inside throwaway containers (`python:3.11-slim`, `node:20-slim`) — nothing installed on the host.
-- `.env.example` committed; `.env` gitignored.
-- `scripts/ci_setup.sh` and `.github/workflows/ci.yml` (runs on PR to `develop` and push to `develop`: `ci_setup.sh` then `make ci`).
-- Committed the pre-existing `docs/source/` files (`PLAYBOOK.md`, `original_notebook.ipynb`, `codebench-prototype.jsx`) that had never been added to git.
+## Completed this session
+- Re-verified Sequence 0 end-to-end: reran the full Section 7 command block from scratch (`bash scripts/ci_setup.sh`, `docker compose up -d`, backend pytest, `curl /healthz`, `docker compose down`). Still green — see Test status below.
+- Confirmed nothing uncommitted/unpushed: `git status` clean, `seq/0-scaffold` up to date with `origin/seq/0-scaffold`.
+- Confirmed via `gh pr list` / `gh run list`: **no PR has been opened yet** and **no GitHub Actions run has ever fired** (the workflow only triggers on `pull_request`/`push` to `develop`; pushing the `seq/0-scaffold` branch alone doesn't trigger it). So "CI green on GitHub" is still unverified — only local verification has happened so far.
+- Known local-machine caveat (not a code problem): `make.exe` is blocked on this Windows host by an Application Control policy, so `make up`/`make ci` can't be run directly here — verified via the equivalent raw `docker compose` commands instead. GitHub Actions' Ubuntu runner is unaffected.
+
+## Test status: GREEN (local only)
+```
+bash scripts/ci_setup.sh   → deps OK
+docker compose up -d        → all 5 containers started (api, worker, db, redis, web)
+docker compose run --rm api pytest -q → 4 passed
+curl -s localhost:8000/healthz → {"status":"ok","version":"0.1.0"}
+docker compose down         → clean teardown
+```
+Not yet run/unknown: GitHub Actions CI (`.github/workflows/ci.yml`) — no run exists yet because no PR is open against `develop`.
 
 ## Next action
-- Run Sequence 0's Section 7 command block end-to-end (`bash scripts/ci_setup.sh`, `make up`, `make test-backend`, `curl /healthz`, `make down`), fix anything red, then commit/push `seq/0-scaffold` and open a PR into `develop`.
-- Once CI is green on GitHub and the PR is merged, tag `seq-0` on `develop` and start **Sequence 1 — Extract the Notebook into a Tested Python Package**.
+Open the PR for `seq/0-scaffold` → `develop` on GitHub (https://github.com/hervemomo/codebench/pull/new/seq/0-scaffold), wait for Actions CI to go green, then merge it and tag `seq-0` on `develop` — only after that should Sequence 1 (Extract the Notebook into a Tested Python Package) begin.
