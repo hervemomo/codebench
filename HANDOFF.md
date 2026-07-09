@@ -1,11 +1,11 @@
 # Handoff
 
 **Last updated:** 2026-07-09 (session end)
-**Sequence in progress:** 3 — API Layer + Async Job Runner (Upload → Preprocess vertical slice) — **implemented, locally green, PR not yet opened**
-**Branch:** `seq/3-api-auth-preprocess` (cut from `develop` at tag `seq-2`), pushed to origin, 0 ahead/0 behind `origin/seq/3-api-auth-preprocess`
+**Sequence in progress:** 4 — Codebook Generation, Review Workflow & Coding Jobs — **not yet started**
+**Branch:** none cut yet — next step is to cut `seq/4-codebook-review-coding` from up-to-date `develop`
 
-## Sequence 0–2 (for reference)
-All complete, tagged `seq-0`/`seq-1`/`seq-2` on `develop`, CI green on GitHub.
+## Sequence 0–3 (for reference)
+All complete, tagged `seq-0`/`seq-1`/`seq-2`/`seq-3` on `develop`, CI green on GitHub. PR #4 (`seq/3-api-auth-preprocess` → `develop`) merged 2026-07-09 via merge commit `d068a12`.
 
 ## Sequence 3 — completed
 - Real auth (no simulation): `POST /api/auth/{register,login,logout}`, `GET /api/auth/me`. Argon2 password hashing; session is a signed (itsdangerous), HTTP-only cookie carrying only a user id. `register` is the dev/admin bootstrap path — creates a brand-new org + its first admin user in one call.
@@ -22,10 +22,9 @@ All complete, tagged `seq-0`/`seq-1`/`seq-2` on `develop`, CI green on GitHub.
   3. **Found only in the manual curl slice, not by any automated test:** re-running `POST /api/datasets/{id}/preprocess` on the same dataset via the real async worker **doubled** the `Response` row count (60 instead of 30) instead of being idempotent — violating a named Success Criterion. Root cause: the job only ever `INSERT`ed, never cleared prior output. Fixed by deleting existing `Response` rows for that dataset (org-scoped) before inserting; added `test_preprocess_job_is_idempotent_on_rerun` to lock in the fix. **This is why the manual curl slice matters — the full automated suite was green while this bug was live.**
   4. (Environment gotcha, not a code bug) `api` and `worker` build as *separate* Docker images from the same Dockerfile — rebuilding `api` alone left `worker` running stale code with no `app/jobs` module at all, surfacing as a confusing RQ `import_attribute` error. Now always run `docker compose build` (no service arg) after backend changes.
 - Manual curl slice run against the live stack (real worker, not synchronous test mode): register → login(implicit via cookie) → create project → create question → upload `tiny_survey.xlsx` → enqueue preprocess → poll job (`loading`→`loaded`→`preprocessed`→`translated`→`done`) → stats. `kept=30, invalid=0, duplicates=0` — matches Sequence 1's codeframe output exactly. `/docs` and `/openapi.json` both 200.
-- **This session:** re-ran Section 7 from a clean rebuild (`docker compose build` — all three images, not just `api`, per the lesson above) — `pytest tests/api -q` → 40 passed, `/healthz` OK. No code changes were needed, so nothing new to commit — `git status` is clean and the branch already matches `origin/seq/3-api-auth-preprocess`.
-- Checked GitHub: still no PR for `seq/3-api-auth-preprocess` and no CI run has ever fired for it (`gh pr list` / `gh run list` both empty for this branch). Sequence 3 is therefore **not** complete by the Playbook's gate (merged to `develop` + CI green) — that step is still pending and wasn't done this session.
+- PR #4 opened `seq/3-api-auth-preprocess` → `develop` (explicit `--base develop`, since GitHub's UI "Compare & pull request" banner defaults to `main`). GitHub Actions CI run 29055345605 went green (`make ci`, org-scoping check, all steps ✓) in 2m24s. Merged via merge commit `d068a12` (same convention as PRs #1–#3: regular merge, not squash). Tagged `seq-3` on `develop` and pushed the tag.
 
-## Test status: GREEN (local only — GitHub Actions has never run for this branch)
+## Test status: GREEN (GitHub Actions CI green on PR #4, run 29055345605)
 ```
 docker compose run --rm api ruff check .                     → All checks passed!
 bash scripts/check_org_scoping.sh                             → Org-scoping check OK
@@ -42,4 +41,10 @@ Manual curl slice against the real worker (not is_async=False): full upload→pr
 - **The automated suite passing is not sufficient proof of correctness for anything touching the real async worker** — this session's idempotency bug was invisible to `pytest tests/api` (which only exercises the synchronous `is_async=False` path) and only surfaced via the manual curl slice against the real `rq worker` process. Any future job-queue work should get a manual real-worker pass, not just synchronous tests.
 
 ## Next action
-Open the PR for `seq/3-api-auth-preprocess` → `develop` on GitHub (https://github.com/hervemomo/codebench/pull/new/seq/3-api-auth-preprocess), wait for Actions CI to go green, then merge and tag `seq-3` — only after that should Sequence 4 (Codebook Generation, Review Workflow & Coding Jobs) begin.
+Sequence 3 is fully closed out (merged, tagged, CI green). Start Sequence 4 — Codebook Generation, Review Workflow & Coding Jobs:
+- Cut `seq/4-codebook-review-coding` from up-to-date `develop` (currently at tag `seq-3`).
+- New migration: `DRAFT → REVIEWED → APPLIED` run-status enum (remember the Sequence-2 lesson: explicitly drop native Postgres ENUM types in `downgrade()`).
+- Implement `POST /api/questions/{id}/runs` (`kind: "ai"|"import"`), review endpoints (`PATCH .../codes/{code_id}`, `POST .../codes`, `POST .../finalize`), `POST /api/runs/{id}/apply` (coding job), `GET /api/runs/{id}/qa`.
+- Section 7 gate: `docker compose run --rm api alembic upgrade head`, `docker compose run --rm api pytest tests/coding -q` (~16 tests), `FAKE_LLM=1 docker compose up -d && bash scripts/manual_coding_flow.sh`.
+- Per the standing lesson from Sequence 3: the automated suite alone is not sufficient proof for anything touching the real async worker — do a manual real-worker pass on the apply/coding job, not just synchronous tests.
+- Local branch `seq/3-api-auth-preprocess` can be pruned (already merged) — do this at the start of the next session if not already done.
