@@ -1,8 +1,8 @@
 # Handoff
 
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-09 (session end)
 **Sequence in progress:** 2 — Data Model, Migrations & Object Storage — **implemented, locally green, PR not yet opened**
-**Branch:** `seq/2-data-model` (cut from `develop` at tag `seq-1`)
+**Branch:** `seq/2-data-model` (cut from `develop` at tag `seq-1`), pushed to origin, 0 ahead/0 behind `origin/seq/2-data-model`
 
 ## Sequence 0 & 1 (for reference)
 Both complete, tagged `seq-0`/`seq-1` on `develop`, CI green on GitHub.
@@ -20,6 +20,8 @@ Both complete, tagged `seq-0`/`seq-1` on `develop`, CI green on GitHub.
 - **Also caught locally before pushing this time** (per the Sequence 1 lesson): two factory-boy test bugs — (1) `factory_boy`'s `sqlalchemy_session_persistence="flush"` means each factory call auto-flushes, so `IntegrityError` surfaces from the factory call itself, not a later explicit `session.flush()` — fixed by moving `pytest.raises` around the factory call; (2) `CodeAssignmentFactory`'s default `response` and `run` built from *independent* org graphs by default — fixed by making `run` a `LazyAttribute` tied to the same question/org as `response`.
 - `tests/db/` (24 tests): `test_models.py` (full object graph, cascade rules via `ondelete=CASCADE`/`SET NULL`, unique constraints), `test_migrations.py` (upgrade/downgrade/upgrade round-trip, enum-cleanup regression test), `test_storage.py` (put/get/presign round-trip against live MinIO), `test_lineage.py` (s2→split→merge chain, walking `parent_run_id`), `test_tenancy.py` (two orgs, `scoped_query` isolation at every depth of the graph, missing-`org_id` → `IntegrityError`).
 - `tests/db/conftest.py` runs migrations to head once per session, then wraps each test in a connection + SAVEPOINT that's rolled back at teardown (standard SQLAlchemy test-isolation pattern) so tests never leak data into each other — confirmed by re-running the seed script and seeing exactly 1 org/project/question despite 24 preceding tests.
+- **This session:** re-ran Section 7 from a clean rebuild against the still-persisted dev volumes (`alembic upgrade head` was a no-op — already at head; `pytest tests/db -q` → 24 passed; `python -m app.seed` → same IDs as before, still idempotent). No code changes were needed, so nothing new to commit — `git status` is clean and the branch already matches `origin/seq/2-data-model`.
+- Checked GitHub: still no PR for `seq/2-data-model` and no CI run has ever fired for it (`gh pr list` / `gh run list` both empty for this branch). Sequence 2 is therefore **not** complete by the Playbook's gate (merged to `develop` + CI green) — that step is still pending and wasn't done this session.
 
 ## Test status: GREEN (local only — GitHub Actions has never run for this branch)
 ```
@@ -42,4 +44,4 @@ mc ls local/                                                  → codebench/ buc
 `make.exe` is still blocked on this Windows host by an Application Control policy — keep using the equivalent raw `docker compose` commands locally. **Before opening a PR, always run `docker compose run --rm api ruff check .` AND `bash scripts/check_org_scoping.sh` locally**, in addition to `pytest` — this is the second sequence where a local-vs-CI gap almost bit us (Sequence 1: lint; this session: caught the same class of gap proactively and it turned out clean).
 
 ## Next action
-Push `seq/2-data-model`, open a PR into `develop`, confirm GitHub Actions CI is green (it now also runs the org-scoping check as its own step), then merge and tag `seq-2` — only after that should Sequence 3 (API Layer + Async Job Runner) begin.
+Open the PR for `seq/2-data-model` → `develop` on GitHub (https://github.com/hervemomo/codebench/pull/new/seq/2-data-model), wait for Actions CI to go green (it now also runs the org-scoping check as its own step), then merge and tag `seq-2` — only after that should Sequence 3 (API Layer + Async Job Runner) begin.
