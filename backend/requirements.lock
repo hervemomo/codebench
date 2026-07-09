@@ -24,8 +24,14 @@ click==8.4.2
     # via
     #   rq
     #   uvicorn
+contourpy==1.3.3
+    # via matplotlib
+coverage[toml]==7.15.0
+    # via pytest-cov
 croniter==6.2.3
     # via rq
+cycler==0.12.1
+    # via matplotlib
 distro==1.9.0
     # via openai
 et-xmlfile==2.0.0
@@ -35,6 +41,10 @@ factory-boy==3.3.3
 faker==40.28.1
     # via factory-boy
 fastapi==0.139.0
+    # via codebench-backend (pyproject.toml)
+fonttools==4.63.0
+    # via matplotlib
+ftfy==6.3.1
     # via codebench-backend (pyproject.toml)
 greenlet==3.5.3
     # via sqlalchemy
@@ -65,6 +75,10 @@ joblib==1.5.3
     #   hdbscan
     #   pynndescent
     #   scikit-learn
+kiwisolver==1.5.0
+    # via matplotlib
+lingua-language-detector==2.1.1
+    # via codebench-backend (pyproject.toml)
 llvmlite==0.48.0
     # via
     #   numba
@@ -73,6 +87,10 @@ mako==1.3.12
     # via alembic
 markupsafe==3.0.3
     # via mako
+matplotlib==3.11.0
+    # via
+    #   codebench-backend (pyproject.toml)
+    #   seaborn
 narwhals==2.23.0
     # via scikit-learn
 numba==0.66.0
@@ -82,26 +100,39 @@ numba==0.66.0
 numpy==2.4.6
     # via
     #   codebench-backend (pyproject.toml)
+    #   contourpy
     #   hdbscan
+    #   matplotlib
     #   numba
     #   pandas
     #   scikit-learn
     #   scipy
+    #   seaborn
     #   umap-learn
 openai==2.44.0
     # via codebench-backend (pyproject.toml)
 openpyxl==3.1.5
     # via codebench-backend (pyproject.toml)
 packaging==26.2
-    # via pytest
+    # via
+    #   matplotlib
+    #   pytest
 pandas==3.0.3
-    # via codebench-backend (pyproject.toml)
+    # via
+    #   codebench-backend (pyproject.toml)
+    #   seaborn
+pillow==12.3.0
+    # via matplotlib
 pluggy==1.6.0
-    # via pytest
+    # via
+    #   pytest
+    #   pytest-cov
 psycopg[binary]==3.3.4
     # via codebench-backend (pyproject.toml)
 psycopg-binary==3.3.4
     # via psycopg
+pyarrow==24.0.0
+    # via codebench-backend (pyproject.toml)
 pydantic==2.13.4
     # via
     #   fastapi
@@ -115,15 +146,21 @@ pygments==2.20.0
     # via pytest
 pynndescent==0.6.0
     # via umap-learn
+pyparsing==3.3.2
+    # via matplotlib
 pytest==9.1.1
     # via
     #   codebench-backend (pyproject.toml)
     #   pytest-asyncio
+    #   pytest-cov
 pytest-asyncio==1.4.0
+    # via codebench-backend (pyproject.toml)
+pytest-cov==7.1.0
     # via codebench-backend (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
     #   croniter
+    #   matplotlib
     #   pandas
 python-dotenv==1.2.2
     # via
@@ -153,6 +190,8 @@ scipy==1.17.1
     #   pynndescent
     #   scikit-learn
     #   umap-learn
+seaborn==0.13.2
+    # via codebench-backend (pyproject.toml)
 six==1.17.0
     # via python-dateutil
 sniffio==1.3.1
@@ -163,6 +202,8 @@ sqlalchemy==2.0.51
     #   codebench-backend (pyproject.toml)
 starlette==1.3.1
     # via fastapi
+tenacity==9.1.4
+    # via codebench-backend (pyproject.toml)
 threadpoolctl==3.6.0
     # via scikit-learn
 tqdm==4.68.4
@@ -195,5 +236,7 @@ uvloop==0.22.1
     # via uvicorn
 watchfiles==1.2.0
     # via uvicorn
+wcwidth==0.8.2
+    # via ftfy
 websockets==16.0
     # via uvicorn

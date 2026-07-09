@@ -25,6 +25,13 @@ dependencies = [
   "httpx",
   "factory-boy",
   "ruff",
+  "ftfy",
+  "lingua-language-detector",
+  "tenacity",
+  "matplotlib",
+  "seaborn",
+  "pytest-cov",
+  "pyarrow",
 ]
 
 [build-system]
