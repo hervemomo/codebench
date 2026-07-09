@@ -1,11 +1,11 @@
 # Handoff
 
 **Last updated:** 2026-07-09 (session end)
-**Sequence in progress:** 4 — Codebook Generation, Review Workflow & Coding Jobs — **implemented, locally green, manual real-worker pass green, PR not yet opened**
-**Branch:** `seq/4-codebook-coding` (cut from `develop` at tag `seq-3`), not yet pushed to origin
+**Sequence in progress:** 5 — Refinement (Split/Merge), Checkpoints & Exports — **not yet started**
+**Branch:** none cut yet — next step is to cut `seq/5-refinement-exports` from up-to-date `develop`
 
-## Sequence 0–3 (for reference)
-All complete, tagged `seq-0`/`seq-1`/`seq-2`/`seq-3` on `develop`, CI green on GitHub. PR #4 (`seq/3-api-auth-preprocess` → `develop`) merged 2026-07-09 via merge commit `d068a12`.
+## Sequence 0–4 (for reference)
+All complete, tagged `seq-0`/`seq-1`/`seq-2`/`seq-3`/`seq-4` on `develop`, CI green on GitHub. PR #5 (`seq/4-codebook-coding` → `develop`) merged 2026-07-09 via merge commit `7771e01`.
 
 ## Sequence 4 — completed
 - Migration `0002_run_status_enum`: adds native Postgres enum `coding_run_status` (`DRAFT`/`REVIEWED`/`APPLIED`), replacing `CodingRun.status`'s Sequence-2 placeholder `String(32)`. Existing rows are uppercased before the `ALTER COLUMN ... USING status::coding_run_status` cast (mirrors how `coding_run_kind` already stores Python enum *names*, not values). `downgrade()` casts back to string and explicitly drops the enum type — same up→down→up regression `tests/db/test_migrations.py` already covers generically, no new test needed.
@@ -23,8 +23,10 @@ All complete, tagged `seq-0`/`seq-1`/`seq-2`/`seq-3` on `develop`, CI green on G
 - `tests/coding/` (24 tests): `test_codebook_ai.py`, `test_codebook_import.py` (list/json/csv/xlsx sources + missing-ID auto-generation), `test_review.py` (accept/reject/edit/manual-add/finalize gates), `test_apply_job.py` (coverage + rejected-codes-never-assigned + idempotency), `test_qa.py` (pure-function fixture + API wiring). `conftest.py` adds a `seed_dataset`/`seed_tiny_survey_dataset` fixture that inserts `Response` rows directly via `SessionLocal()`, bypassing upload/preprocess entirely (already covered by Sequence 3) so coding-stage tests get fully deterministic input text for the fake LLM's keyword-based matching.
 - `scripts/manual_coding_flow.sh` (new): curl+python3 walkthrough (no `jq` dependency) of the full flow against the **real** `worker` container — register → project → question → upload → preprocess → AI codebook run → accept all codes → finalize → apply → QA → **re-apply + QA again, asserting `total_coded` is unchanged**. Since this host has an unrelated stray process squatting on port 8000 (a different, unrelated project — `codeframe-webapp`), this session's actual run used a throwaway `python:3.11-slim` container joined to the `codebench_default` docker network (`BASE_URL=http://api:8000`) instead of `localhost:8000`; the script itself is unchanged and works either way via `BASE_URL`/`SURVEY_FILE` env overrides.
 - One implementation bug found and fixed **before** it reached tests: `finalize_run`'s catch-all injection first built a scratch `Codebook` containing placeholder `Code(code_id=..., name="")` entries to reuse `codebook.ensure_other_code`'s metadata generation — but any code having a non-empty `code_id` makes `Codebook.has_code_ids() == True`, and `ensure_other_code` refuses to auto-inject into a codebook that `requires_manual_ids()` without an explicit `other_code_id`. Fixed by generating the catch-all's `code_id` first (via the existing `_next_code_id` helper) and passing it explicitly to `ensure_other_code(..., other_code_id=new_id)` against an *empty* scratch codebook, instead of one pre-seeded with ID-bearing placeholders.
+- PR #5 opened `seq/4-codebook-coding` → `develop` (explicit `--base develop`). GitHub Actions CI run 29058091014 went green (org-scoping check, `make ci`, all steps ✓) in 2m1s. Merged via merge commit `7771e01` (same convention as PRs #1–#4: regular merge, not squash). Tagged `seq-4` on `develop` and pushed the tag.
+- **Design call made, not dictated by the Playbook, worth re-confirming with the user before Sequence 5 builds on it:** imported codebook codes go through the *same* proposed→accept/reject review gate as AI-generated ones (the Playbook's wording could be read either way). If a future session decides imported codes should default to pre-accepted instead, that only touches `app/jobs/codebook.py::run_create_codebook_job`'s `status = "proposed"` assignment loop — no schema change needed.
 
-## Test status: GREEN (local + manual real-worker pass; GitHub Actions not yet run for this branch)
+## Test status: GREEN (local + manual real-worker pass + GitHub Actions CI green on PR #5, run 29058091014)
 ```
 docker compose run --rm api alembic upgrade head        → 0001_initial -> 0002_run_status_enum
 docker compose run --rm api ruff check .                → All checks passed!
@@ -45,4 +47,11 @@ Manual flow (scripts/manual_coding_flow.sh) against the real worker: full
 - Idempotency (delete-then-insert before writing job output) is now a standing requirement for every job that writes DB rows, not just something to catch after the fact — Sequence 4's apply job built it in from the start and the manual flow explicitly re-applies to prove it.
 
 ## Next action
-Open the PR for `seq/4-codebook-coding` → `develop` on GitHub (explicit `--base develop`, not the UI default `main` — see the Sequence 3 lesson), wait for Actions CI to go green, then merge and tag `seq-4` — only after that should Sequence 5 (Refinement: Split/Merge, Checkpoints & Exports) begin. Local branch `seq/3-api-auth-preprocess` was already pruned (local + remote) at the start of this session.
+Sequence 4 is fully closed out (merged, tagged, CI green). Start Sequence 5 — Refinement (Split/Merge), Checkpoints & Exports:
+- Cut `seq/5-refinement-exports` from up-to-date `develop` (currently at tag `seq-4`).
+- New backend dep: `matplotlib` (headless, `MPLBACKEND=Agg` in the Dockerfile) — `codeframe.reporting` already has `export_charts`/`export_workbook` from Sequence 1, reuse them rather than reimplementing.
+- Implement `POST /api/runs/{id}/split` (`{parent_code_id, subcodes?, n_proposed?}` — job proposes subcodes if omitted, child DRAFT run reuses Sequence 4's review/finalize/apply machinery), `POST /api/runs/{id}/merge` (same pattern), `POST /api/questions/{id}/reset?to_run={run_id}` (moves the active-run pointer along lineage, deletes nothing), and the Results/exports group: `GET /api/runs/{id}/results/{frequencies|cooccurrence|codebook}`, `GET /api/runs/{id}/responses` (paginated, search/filter), `POST /api/runs/{id}/exports` (writes an artifact to MinIO via an RQ job), `GET /api/exports/{id}` (presigned URL).
+- `CodingRun.parent_run_id` and `CodingRunKind.SPLIT`/`MERGE` already exist in the schema (added in Sequence 2, unused until now) — no new lineage migration should be needed, only `ExportArtifact` usage (also already modeled, unused until now).
+- Section 7 gate: `docker compose run --rm api pytest tests/refine tests/exports -q` (~15 tests), `bash scripts/manual_refine_flow.sh` (new script to write, same curl+python3 pattern as `scripts/manual_coding_flow.sh` — no `jq` dependency, run via a throwaway container on `codebench_default` if the host's stray port-8000 process is still there).
+- Per the standing lesson from Sequences 3 and 4: build idempotency into any new job from the start (delete-then-insert before writing rows), and do a manual real-worker pass on anything export/job-related, not just synchronous tests.
+- Local branch `seq/4-codebook-coding` can be pruned (already merged) — do this at the start of the next session if not already done.
