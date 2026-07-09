@@ -16,6 +16,10 @@ anyio==4.14.1
     #   openai
     #   starlette
     #   watchfiles
+argon2-cffi==25.1.0
+    # via codebench-backend (pyproject.toml)
+argon2-cffi-bindings==25.1.0
+    # via argon2-cffi
 boto3==1.43.44
     # via codebench-backend (pyproject.toml)
 botocore==1.43.44
@@ -26,6 +30,8 @@ certifi==2026.6.17
     # via
     #   httpcore
     #   httpx
+cffi==2.1.0
+    # via argon2-cffi-bindings
 click==8.4.2
     # via
     #   rq
@@ -74,6 +80,8 @@ idna==3.18
     #   httpx
 iniconfig==2.3.0
     # via pytest
+itsdangerous==2.2.0
+    # via codebench-backend (pyproject.toml)
 jiter==0.16.0
     # via openai
 jmespath==1.1.0
@@ -143,6 +151,8 @@ psycopg-binary==3.3.4
     # via psycopg
 pyarrow==24.0.0
     # via codebench-backend (pyproject.toml)
+pycparser==3.0
+    # via cffi
 pydantic==2.13.4
     # via
     #   fastapi

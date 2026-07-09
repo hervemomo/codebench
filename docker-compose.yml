@@ -13,20 +13,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      minio:
+        condition: service_started
 
   worker:
     build:
       context: .
       dockerfile: docker/backend.Dockerfile
-    # Real RQ worker command lands in Sequence 3; kept idle for now so `up`
-    # succeeds without a task queue to consume.
-    command: sh -c "echo 'worker placeholder — see Sequence 3' && sleep infinity"
+    command: rq worker --url $REDIS_URL codebench
     env_file:
       - .env
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_started
+      minio:
         condition: service_started
 
   db:
