@@ -1,24 +1,18 @@
 # Handoff
 
-**Last updated:** 2026-07-08 (session end)
-**Sequence in progress:** 0 — Repository Scaffold & Isolated Environment
-**Branch:** `seq/0-scaffold` (cut from `develop`, pushed to origin, 1 commit ahead of `develop`)
+**Last updated:** 2026-07-09
+**Sequence in progress:** 0 — Repository Scaffold & Isolated Environment — **COMPLETE, tagged `seq-0`**
+**Branch:** `develop` (at tag `seq-0`, commit `7da6162`). `seq/0-scaffold` is fully merged and stale — safe to ignore/delete.
 
-## Completed this session
-- Re-verified Sequence 0 end-to-end: reran the full Section 7 command block from scratch (`bash scripts/ci_setup.sh`, `docker compose up -d`, backend pytest, `curl /healthz`, `docker compose down`). Still green — see Test status below.
-- Confirmed nothing uncommitted/unpushed: `git status` clean, `seq/0-scaffold` up to date with `origin/seq/0-scaffold`.
-- Confirmed via `gh pr list` / `gh run list`: **no PR has been opened yet** and **no GitHub Actions run has ever fired** (the workflow only triggers on `pull_request`/`push` to `develop`; pushing the `seq/0-scaffold` branch alone doesn't trigger it). So "CI green on GitHub" is still unverified — only local verification has happened so far.
-- Known local-machine caveat (not a code problem): `make.exe` is blocked on this Windows host by an Application Control policy, so `make up`/`make ci` can't be run directly here — verified via the equivalent raw `docker compose` commands instead. GitHub Actions' Ubuntu runner is unaffected.
+## Completed
+- Full Sequence 0 scaffold implemented and merged: monorepo layout, Docker Compose env (`api`, `worker`, `db`=postgres:16, `redis`=redis:7, `web`), `/healthz`, lockfiles generated in-container, `.env.example`, `scripts/ci_setup.sh`, `.github/workflows/ci.yml`.
+- **Branch-model correction:** PR #1 was originally merged into `main` instead of `develop` (a deviation from the Playbook), which meant `develop` was empty and CI had never run. Fixed by fast-forward-merging `main` into `develop` and pushing.
+- That push triggered GitHub Actions for the first time: **CI is green** (`ci_setup.sh` + `make ci`, 59s, no failures — confirms `make` itself works fine on the Linux runner).
+- Re-ran the local Section 7 gate on `develop` after the fix: `docker compose build` clean, all 5 containers up, `pytest -q` → `4 passed`, `curl /healthz` → `{"status":"ok","version":"0.1.0"}`, clean teardown.
+- Tagged `seq-0` on `develop` and pushed the tag.
+- Known local-machine caveat (not a code problem, doesn't affect CI): `make.exe` is blocked on this Windows host by an Application Control policy — use the equivalent raw `docker compose` commands locally instead of `make up`/`make ci`.
 
-## Test status: GREEN (local only)
-```
-bash scripts/ci_setup.sh   → deps OK
-docker compose up -d        → all 5 containers started (api, worker, db, redis, web)
-docker compose run --rm api pytest -q → 4 passed
-curl -s localhost:8000/healthz → {"status":"ok","version":"0.1.0"}
-docker compose down         → clean teardown
-```
-Not yet run/unknown: GitHub Actions CI (`.github/workflows/ci.yml`) — no run exists yet because no PR is open against `develop`.
+## Test status: GREEN (local + GitHub Actions CI)
 
 ## Next action
-Open the PR for `seq/0-scaffold` → `develop` on GitHub (https://github.com/hervemomo/codebench/pull/new/seq/0-scaffold), wait for Actions CI to go green, then merge it and tag `seq-0` on `develop` — only after that should Sequence 1 (Extract the Notebook into a Tested Python Package) begin.
+Start **Sequence 1 — Extract the Notebook into a Tested Python Package**: `git checkout develop && git pull`, then `git checkout -b seq/1-codeframe develop`, and follow Sequence 1's implementation/testing instructions in `docs/source/PLAYBOOK.md`.
