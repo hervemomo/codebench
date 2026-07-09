@@ -1,8 +1,8 @@
 # Handoff
 
-**Last updated:** 2026-07-09
+**Last updated:** 2026-07-09 (session end)
 **Sequence in progress:** 3 — API Layer + Async Job Runner (Upload → Preprocess vertical slice) — **implemented, locally green, PR not yet opened**
-**Branch:** `seq/3-api-auth-preprocess` (cut from `develop` at tag `seq-2`)
+**Branch:** `seq/3-api-auth-preprocess` (cut from `develop` at tag `seq-2`), pushed to origin, 0 ahead/0 behind `origin/seq/3-api-auth-preprocess`
 
 ## Sequence 0–2 (for reference)
 All complete, tagged `seq-0`/`seq-1`/`seq-2` on `develop`, CI green on GitHub.
@@ -22,6 +22,8 @@ All complete, tagged `seq-0`/`seq-1`/`seq-2` on `develop`, CI green on GitHub.
   3. **Found only in the manual curl slice, not by any automated test:** re-running `POST /api/datasets/{id}/preprocess` on the same dataset via the real async worker **doubled** the `Response` row count (60 instead of 30) instead of being idempotent — violating a named Success Criterion. Root cause: the job only ever `INSERT`ed, never cleared prior output. Fixed by deleting existing `Response` rows for that dataset (org-scoped) before inserting; added `test_preprocess_job_is_idempotent_on_rerun` to lock in the fix. **This is why the manual curl slice matters — the full automated suite was green while this bug was live.**
   4. (Environment gotcha, not a code bug) `api` and `worker` build as *separate* Docker images from the same Dockerfile — rebuilding `api` alone left `worker` running stale code with no `app/jobs` module at all, surfacing as a confusing RQ `import_attribute` error. Now always run `docker compose build` (no service arg) after backend changes.
 - Manual curl slice run against the live stack (real worker, not synchronous test mode): register → login(implicit via cookie) → create project → create question → upload `tiny_survey.xlsx` → enqueue preprocess → poll job (`loading`→`loaded`→`preprocessed`→`translated`→`done`) → stats. `kept=30, invalid=0, duplicates=0` — matches Sequence 1's codeframe output exactly. `/docs` and `/openapi.json` both 200.
+- **This session:** re-ran Section 7 from a clean rebuild (`docker compose build` — all three images, not just `api`, per the lesson above) — `pytest tests/api -q` → 40 passed, `/healthz` OK. No code changes were needed, so nothing new to commit — `git status` is clean and the branch already matches `origin/seq/3-api-auth-preprocess`.
+- Checked GitHub: still no PR for `seq/3-api-auth-preprocess` and no CI run has ever fired for it (`gh pr list` / `gh run list` both empty for this branch). Sequence 3 is therefore **not** complete by the Playbook's gate (merged to `develop` + CI green) — that step is still pending and wasn't done this session.
 
 ## Test status: GREEN (local only — GitHub Actions has never run for this branch)
 ```
@@ -40,4 +42,4 @@ Manual curl slice against the real worker (not is_async=False): full upload→pr
 - **The automated suite passing is not sufficient proof of correctness for anything touching the real async worker** — this session's idempotency bug was invisible to `pytest tests/api` (which only exercises the synchronous `is_async=False` path) and only surfaced via the manual curl slice against the real `rq worker` process. Any future job-queue work should get a manual real-worker pass, not just synchronous tests.
 
 ## Next action
-Push `seq/3-api-auth-preprocess`, open a PR into `develop`, confirm GitHub Actions CI is green, then merge and tag `seq-3` — only after that should Sequence 4 (Codebook Generation, Review Workflow & Coding Jobs) begin.
+Open the PR for `seq/3-api-auth-preprocess` → `develop` on GitHub (https://github.com/hervemomo/codebench/pull/new/seq/3-api-auth-preprocess), wait for Actions CI to go green, then merge and tag `seq-3` — only after that should Sequence 4 (Codebook Generation, Review Workflow & Coding Jobs) begin.
