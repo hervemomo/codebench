@@ -9,7 +9,7 @@ client-supplied `org_id`; it always comes from the authenticated session
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -49,3 +49,26 @@ class ScopedRepository(Generic[ModelT]):
         obj.org_id = self.org_id
         self.session.add(obj)
         return obj
+
+
+# ── Pre-auth lookups ─────────────────────────────────────────────────────────
+#
+# The ONE sanctioned exception to org-scoping: determining which org a user
+# belongs to is the whole point of these two queries, so no org_id can exist
+# yet. Keeping them here (not in app/auth.py) means the org-scoping grep check
+# doesn't need special-casing beyond its existing "outside this module" rule.
+
+
+def find_user_by_email(session: Session, email: str) -> Optional["User"]:  # noqa: F821
+    """Login lookup. Returns None if no user has this email."""
+    from app.models import User
+
+    return session.execute(select(User).where(User.email == email)).scalars().one_or_none()
+
+
+def get_user_by_id_unscoped(session: Session, user_id: int) -> Optional["User"]:  # noqa: F821
+    """Session-resolution lookup: the cookie carries only a user id; org_id is
+    read off the row itself and becomes the org_id for the rest of the request."""
+    from app.models import User
+
+    return session.get(User, user_id)

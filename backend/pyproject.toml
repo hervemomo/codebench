@@ -33,6 +33,8 @@ dependencies = [
   "pytest-cov",
   "pyarrow",
   "boto3",
+  "argon2-cffi",
+  "itsdangerous",
 ]
 
 [build-system]

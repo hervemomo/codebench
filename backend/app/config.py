@@ -17,6 +17,13 @@ class Settings(BaseSettings):
     s3_bucket: str = "codebench"
     s3_region: str = "us-east-1"
 
+    # Signs the HTTP-only session cookie. Override via env in any real deployment.
+    session_secret_key: str = "dev-insecure-secret-change-me"
+    # False in tests: executes RQ jobs inline (no separate worker process needed).
+    rq_is_async: bool = True
+    # True in tests/dev without an API key: use the deterministic fake OpenAI client.
+    fake_llm: bool = False
+
     def require_openai_api_key(self) -> str:
         if not self.openai_api_key:
             raise RuntimeError(
