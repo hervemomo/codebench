@@ -16,6 +16,12 @@ anyio==4.14.1
     #   openai
     #   starlette
     #   watchfiles
+boto3==1.43.44
+    # via codebench-backend (pyproject.toml)
+botocore==1.43.44
+    # via
+    #   boto3
+    #   s3transfer
 certifi==2026.6.17
     # via
     #   httpcore
@@ -70,6 +76,10 @@ iniconfig==2.3.0
     # via pytest
 jiter==0.16.0
     # via openai
+jmespath==1.1.0
+    # via
+    #   boto3
+    #   botocore
 joblib==1.5.3
     # via
     #   hdbscan
@@ -159,6 +169,7 @@ pytest-cov==7.1.0
     # via codebench-backend (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
+    #   botocore
     #   croniter
     #   matplotlib
     #   pandas
@@ -178,6 +189,8 @@ rq==2.10.0
     # via codebench-backend (pyproject.toml)
 ruff==0.15.20
     # via codebench-backend (pyproject.toml)
+s3transfer==0.19.0
+    # via boto3
 scikit-learn==1.9.0
     # via
     #   codebench-backend (pyproject.toml)
@@ -230,6 +243,8 @@ typing-inspection==0.4.2
     #   pydantic-settings
 umap-learn==0.5.12
     # via codebench-backend (pyproject.toml)
+urllib3==2.7.0
+    # via botocore
 uvicorn[standard]==0.51.0
     # via codebench-backend (pyproject.toml)
 uvloop==0.22.1

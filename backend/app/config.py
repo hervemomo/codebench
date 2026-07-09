@@ -11,6 +11,12 @@ class Settings(BaseSettings):
     redis_url: str = "redis://redis:6379/0"
     app_version: str = "0.1.0"
 
+    s3_endpoint_url: str = "http://minio:9000"
+    s3_access_key: str = "minioadmin"
+    s3_secret_key: str = "minioadmin"
+    s3_bucket: str = "codebench"
+    s3_region: str = "us-east-1"
+
     def require_openai_api_key(self) -> str:
         if not self.openai_api_key:
             raise RuntimeError(
