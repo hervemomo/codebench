@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy env template
+        run: cp .env.example .env
+
+      - name: CI setup (build images, start db/redis, sanity import)
+        run: bash scripts/ci_setup.sh
+
+      - name: make ci
+        run: make ci
