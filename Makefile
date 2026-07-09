@@ -1,4 +1,4 @@
-.PHONY: build up down test-backend test-frontend lint ci
+.PHONY: build up down test-backend test-frontend lint check-org-scoping ci
 
 build:
 	docker compose build
@@ -19,4 +19,7 @@ lint:
 	docker compose run --rm api ruff check .
 	docker compose run --rm web npm run lint
 
-ci: build lint test-backend test-frontend
+check-org-scoping:
+	bash scripts/check_org_scoping.sh
+
+ci: build lint check-org-scoping test-backend test-frontend

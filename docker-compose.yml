@@ -48,6 +48,27 @@ services:
     volumes:
       - redisdata:/data
 
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+  # One-off bucket-bootstrap helper. Not started by `up`; invoked explicitly
+  # by scripts/ci_setup.sh via `docker compose run --rm mc "<sh -c command>"`.
+  mc:
+    image: minio/mc:latest
+    entrypoint: ["/bin/sh", "-c"]
+    depends_on:
+      - minio
+    profiles: ["tools"]
+
   web:
     build:
       context: .
@@ -59,3 +80,4 @@ services:
 volumes:
   pgdata:
   redisdata:
+  miniodata:

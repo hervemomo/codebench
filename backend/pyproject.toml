@@ -32,6 +32,7 @@ dependencies = [
   "seaborn",
   "pytest-cov",
   "pyarrow",
+  "boto3",
 ]
 
 [build-system]
