@@ -31,7 +31,7 @@ class CodingRun(TenantMixin, Base):
     codebook_json: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     token_usage: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
 
-    question = relationship("Question", back_populates="coding_runs")
+    question = relationship("Question", back_populates="coding_runs", foreign_keys=[question_id])
     parent_run = relationship("CodingRun", remote_side=[id], back_populates="child_runs")
     child_runs = relationship("CodingRun", back_populates="parent_run")
     code_assignments = relationship("CodeAssignment", back_populates="run", cascade="all, delete-orphan")
