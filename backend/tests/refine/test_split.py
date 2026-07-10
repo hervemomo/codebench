@@ -89,27 +89,53 @@ def test_split_preserves_parent_when_requested(build_applied_run):
     assert {"Sweetness", "Freshness"} <= names
 
 
-def test_split_multi_config_creates_one_child_run_each(build_applied_run):
+def test_split_multi_config_splits_different_parent_codes_into_one_child_run_each(build_applied_run):
+    """parent_codes lets one request split several DIFFERENT parent codes at
+    once, each into its own independent child run -- not several candidate
+    configurations of the same parent code."""
     seeded = build_applied_run(TASTE_TEXTS + PRICE_TEXTS, ["Taste & Flavor", "Price & Value"])
     client = seeded["client"]
     run_id = seeded["run_id"]
-    taste_id = _taste_code_id(client, run_id)
+    codes = client.get(f"/api/runs/{run_id}").json()["codebook"]["codes"]
+    taste_id = next(c["code_id"] for c in codes if c["name"] == "Taste & Flavor")
+    price_id = next(c["code_id"] for c in codes if c["name"] == "Price & Value")
 
     resp = client.post(f"/api/runs/{run_id}/split", json={
-        "parent_code_id": taste_id,
-        "configs": [
-            {"subcodes": ["Sweetness", "Freshness"], "subcode_definitions": ["d1", "d2"]},
-            {"subcodes": ["Boldness", "Mildness"], "subcode_definitions": ["d3", "d4"]},
+        "parent_codes": [
+            {"parent_code_id": taste_id, "subcodes": ["Sweetness", "Freshness"], "subcode_definitions": ["d1", "d2"]},
+            {"parent_code_id": price_id, "subcodes": ["Affordability", "Premium"], "subcode_definitions": ["d3", "d4"]},
         ],
     })
     assert resp.status_code == 202, resp.text
     runs = resp.json()["runs"]
     assert len(runs) == 2
     assert runs[0]["id"] != runs[1]["id"]
+    assert {r["parent_code_id"] for r in runs} == {taste_id, price_id}
+
     names_a = {c["name"] for c in client.get(f"/api/runs/{runs[0]['id']}").json()["codebook"]["codes"]}
     names_b = {c["name"] for c in client.get(f"/api/runs/{runs[1]['id']}").json()["codebook"]["codes"]}
+    # Each child only splits its OWN parent code -- the other parent code is
+    # carried over untouched (still present, not turned into sub-codes) in
+    # both children, since each split works off the same original parent run.
     assert {"Sweetness", "Freshness"} <= names_a
-    assert {"Boldness", "Mildness"} <= names_b
+    assert "Affordability" not in names_a
+    assert {"Affordability", "Premium"} <= names_b
+    assert "Sweetness" not in names_b
+
+
+def test_split_multi_config_rejects_unknown_parent_code_id(build_applied_run):
+    seeded = build_applied_run(TASTE_TEXTS + PRICE_TEXTS, ["Taste & Flavor", "Price & Value"])
+    client = seeded["client"]
+    run_id = seeded["run_id"]
+    taste_id = _taste_code_id(client, run_id)
+
+    resp = client.post(f"/api/runs/{run_id}/split", json={
+        "parent_codes": [
+            {"parent_code_id": taste_id, "subcodes": ["Sweetness", "Freshness"]},
+            {"parent_code_id": "NOPE", "subcodes": ["A", "B"]},
+        ],
+    })
+    assert resp.status_code == 404
 
 
 def test_split_requires_applied_parent(build_applied_run, seed_dataset):
@@ -127,3 +153,9 @@ def test_split_unknown_parent_code_id_returns_404(build_applied_run):
     seeded = build_applied_run(TASTE_TEXTS, ["Taste & Flavor"])
     resp = seeded["client"].post(f"/api/runs/{seeded['run_id']}/split", json={"parent_code_id": "NOPE", "subcodes": ["A", "B"]})
     assert resp.status_code == 404
+
+
+def test_split_without_parent_code_id_or_parent_codes_returns_422(build_applied_run):
+    seeded = build_applied_run(TASTE_TEXTS, ["Taste & Flavor"])
+    resp = seeded["client"].post(f"/api/runs/{seeded['run_id']}/split", json={"subcodes": ["A", "B"]})
+    assert resp.status_code == 422
