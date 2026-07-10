@@ -37,14 +37,17 @@ def _latest_progress(job_id: str) -> dict:
 @router.get("/{job_id}")
 def get_job(job_id: str, current: CurrentUser = Depends(get_current_user)):
     redis_client = get_redis_client()
+    result = None
     try:
         job = Job.fetch(job_id, connection=redis_client)
         rq_status = job.get_status(refresh=True)
+        if rq_status == "finished":
+            result = job.return_value()
     except NoSuchJobError:
         rq_status = "unknown"
 
     progress = _latest_progress(job_id)
-    return {"id": job_id, "status": rq_status, **progress}
+    return {"id": job_id, "status": rq_status, "result": result, **progress}
 
 
 @router.get("/{job_id}/stream")

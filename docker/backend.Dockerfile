@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 WORKDIR /app
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 MPLBACKEND=Agg
 COPY backend/pyproject.toml backend/requirements.lock ./
 RUN pip install -r requirements.lock
 COPY backend/ .
