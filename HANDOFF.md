@@ -7,6 +7,9 @@
 ## Sequence 0–4 (for reference)
 All complete, tagged `seq-0`/`seq-1`/`seq-2`/`seq-3`/`seq-4` on `develop`, CI green on GitHub. PR #5 (`seq/4-codebook-coding` → `develop`) merged 2026-07-09 via merge commit `7771e01`.
 
+## Branch-cleanup policy (as of 2026-07-09)
+Per-sequence branches (`seq/N-*`) are **left in place**, local and remote, once their PR merges — they're inert (already merged, won't be merged again, don't affect CI). Do **not** prune them after each sequence merge. Instead, do one batch prune of every merged `seq/N-*` branch at the point of the eventual `develop` → `main` release merge. `seq/0-scaffold` and `seq/4-codebook-coding` are currently still on origin as the first branches under this policy; earlier ones (`seq/1`, `seq/2`, `seq/3`) were already pruned before this policy was adopted, so there's nothing to reconcile there.
+
 ## Sequence 4 — completed
 - Migration `0002_run_status_enum`: adds native Postgres enum `coding_run_status` (`DRAFT`/`REVIEWED`/`APPLIED`), replacing `CodingRun.status`'s Sequence-2 placeholder `String(32)`. Existing rows are uppercased before the `ALTER COLUMN ... USING status::coding_run_status` cast (mirrors how `coding_run_kind` already stores Python enum *names*, not values). `downgrade()` casts back to string and explicitly drops the enum type — same up→down→up regression `tests/db/test_migrations.py` already covers generically, no new test needed.
 - `POST /api/questions/{id}/runs` `{kind: "ai"|"import", target_codes?, cluster_overrides?, codebook_source?, enrich?}`: resolves the question's most-recently-preprocessed `Dataset` (409 if none), creates a `DRAFT` `CodingRun`, and enqueues `app/jobs/codebook.py::run_create_codebook_job`.
